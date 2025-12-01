@@ -103,6 +103,8 @@ To enable support for Java, C++, and Go:
    ```
    
    The server will run on `http://localhost:3001` by default.
+   
+   > **Backend Structure**: The backend is organized in a modular structure with separate folders for controllers, services, routes, middlewares, and utilities. See the [Backend Architecture](#backend-architecture) section for details.
 
 3. **Start the frontend** (in another terminal):
    ```bash
@@ -163,7 +165,29 @@ algo/
 │   │       └── ... (17 categories total)
 │   └── ...
 ├── server/                     # Backend API for compiled languages
-│   ├── index.js               # Express server
+│   ├── src/
+│   │   ├── config/            # Configuration files
+│   │   │   ├── environment.js # Environment setup (Java home, temp dir, port)
+│   │   │   └── constants.js   # Application constants
+│   │   ├── controllers/       # Request handlers
+│   │   │   ├── healthController.js
+│   │   │   ├── compilerController.js
+│   │   │   └── executeController.js
+│   │   ├── services/          # Business logic
+│   │   │   ├── codeExecutionService.js
+│   │   │   └── compilerCheckService.js
+│   │   ├── routes/            # Route definitions
+│   │   │   └── index.js
+│   │   ├── middlewares/       # Express middlewares
+│   │   │   └── errorHandler.js
+│   │   ├── utils/             # Utility functions
+│   │   │   ├── functionExtractor.js
+│   │   │   ├── testCodeBuilder.js
+│   │   │   ├── fileManager.js
+│   │   │   └── outputParser.js
+│   │   ├── app.js             # Express app setup
+│   │   └── server.js          # Server entry point
+│   ├── index.js               # Legacy file (can be removed)
 │   └── package.json
 ├── scripts/                    # Utility scripts
 └── package.json
@@ -278,6 +302,59 @@ To add a new problem:
 - **Backend:**
   - Express - API server
   - Node.js - Runtime
+  - Modular architecture with separation of concerns
+
+## 🏗️ Backend Architecture
+
+The backend follows a clean, modular architecture for better maintainability and scalability:
+
+### Folder Structure
+
+```
+server/src/
+├── config/              # Configuration files
+│   ├── environment.js  # Environment setup (Java home detection, temp dir, port)
+│   └── constants.js    # Application constants (supported languages, timeouts)
+│
+├── controllers/         # Request handlers (HTTP layer)
+│   ├── healthController.js      # Health check endpoint
+│   ├── compilerController.js    # Compiler availability check
+│   └── executeController.js     # Code execution endpoint
+│
+├── services/            # Business logic layer
+│   ├── codeExecutionService.js  # Orchestrates code execution (compile, run, parse)
+│   └── compilerCheckService.js  # Checks compiler availability on system
+│
+├── routes/              # Route definitions
+│   └── index.js        # All API endpoints mapped to controllers
+│
+├── middlewares/         # Express middlewares
+│   └── errorHandler.js # Global error handling and 404 handler
+│
+├── utils/               # Reusable utility functions
+│   ├── functionExtractor.js  # Extract function names from code by language
+│   ├── testCodeBuilder.js    # Build test code wrappers for different languages
+│   ├── fileManager.js        # Manage temporary files
+│   └── outputParser.js       # Parse and format execution output
+│
+├── app.js               # Express app configuration
+└── server.js            # Server entry point
+```
+
+### API Endpoints
+
+- `GET /health` - Health check endpoint
+- `GET /api/check-compilers` - Check availability of Java, C++, and Go compilers
+- `POST /api/execute` - Execute code in Java, C++, or Go
+
+### Module Responsibilities
+
+- **Config**: Environment variables, constants, and configuration management
+- **Controllers**: Handle HTTP requests, validate input, call services, return responses
+- **Services**: Contain business logic for code execution and compiler checking
+- **Routes**: Define API endpoints and map them to controllers
+- **Middlewares**: Global error handling and request processing
+- **Utils**: Reusable functions for code parsing, test building, and output formatting
 
 ## 🔍 Troubleshooting
 
