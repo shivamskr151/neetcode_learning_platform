@@ -1,0 +1,21 @@
+{
+  "id": 90,
+  "title": "Course Schedule",
+  "difficulty": "Medium",
+  "pattern": "Topological Sort",
+  "description": "Problem description for Course Schedule. This is a placeholder - please update with the actual problem description from LeetCode.",
+  "patternExplanation": "Pattern explanation for Topological Sort. This is a placeholder - please update with detailed pattern explanation.",
+  "patternExplanationHinglish": "Hinglish mein pattern explanation for Topological Sort. Yeh ek placeholder hai - please update karein with detailed explanation.",
+  "examples": [
+    {
+      "input": {},
+      "output": null,
+      "explanation": "Example explanation placeholder. Please add actual examples.",
+      "explanationHinglish": "Example explanation ka placeholder. Please actual examples add karein."
+    }
+  ],
+  "complexity": {
+    "time": "O(n) - Placeholder complexity",
+    "space": "O(n) - Placeholder complexity"
+  }
+}

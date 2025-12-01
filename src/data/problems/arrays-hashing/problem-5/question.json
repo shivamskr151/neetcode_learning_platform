@@ -1,0 +1,21 @@
+{
+  "id": 5,
+  "title": "Top K Frequent Elements",
+  "difficulty": "Medium",
+  "pattern": "Hash Map + Bucket Sort / Heap",
+  "description": "Problem description for Top K Frequent Elements. This is a placeholder - please update with the actual problem description from LeetCode.",
+  "patternExplanation": "Pattern explanation for Hash Map + Bucket Sort / Heap. This is a placeholder - please update with detailed pattern explanation.",
+  "patternExplanationHinglish": "Hinglish mein pattern explanation for Hash Map + Bucket Sort / Heap. Yeh ek placeholder hai - please update karein with detailed explanation.",
+  "examples": [
+    {
+      "input": {},
+      "output": null,
+      "explanation": "Example explanation placeholder. Please add actual examples.",
+      "explanationHinglish": "Example explanation ka placeholder. Please actual examples add karein."
+    }
+  ],
+  "complexity": {
+    "time": "O(n) - Placeholder complexity",
+    "space": "O(n) - Placeholder complexity"
+  }
+}

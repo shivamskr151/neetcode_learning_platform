@@ -1,0 +1,34 @@
+{
+  "id": 1,
+  "title": "Two Sum",
+  "difficulty": "Easy",
+  "pattern": "Hash Map",
+  "description": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+  "patternExplanation": "The key pattern here is using a Hash Map to store numbers we've seen along with their indices. Instead of checking every pair (O(n²)), we can:\n1. Iterate through the array once\n2. For each number, check if its complement (target - current number) exists in our map\n3. If found, return both indices\n4. Otherwise, store the current number and its index in the map\n\nThis reduces time complexity from O(n²) to O(n).",
+  "patternExplanationHinglish": "Yahan main pattern hai Hash Map use karna jo numbers ko store kare with unke indices ke saath. Har pair ko check karne ki jagah (O(n²)), hum:\n1. Array ko ek baar iterate karte hain\n2. Har number ke liye, check karte hain ki uska complement (target - current number) map mein hai ya nahi\n3. Agar mil gaya, toh dono indices return kar dete hain\n4. Warna current number aur uska index map mein store kar dete hain\n\nIsse time complexity O(n²) se O(n) ho jati hai.",
+  "examples": [
+    {
+      "input": { "nums": [2, 7, 11, 15], "target": 9 },
+      "output": [0, 1],
+      "explanation": "Because nums[0] + nums[1] == 9, we return [0, 1].",
+      "explanationHinglish": "Kyunki nums[0] + nums[1] == 9, isliye hum [0, 1] return karte hain."
+    },
+    {
+      "input": { "nums": [3, 2, 4], "target": 6 },
+      "output": [1, 2],
+      "explanation": "nums[1] + nums[2] == 6, so we return [1, 2].",
+      "explanationHinglish": "nums[1] + nums[2] == 6, isliye hum [1, 2] return karte hain."
+    },
+    {
+      "input": { "nums": [3, 3], "target": 6 },
+      "output": [0, 1],
+      "explanation": "Both elements are 3, so indices [0, 1] sum to 6.",
+      "explanationHinglish": "Dono elements 3 hain, isliye indices [0, 1] ka sum 6 hai."
+    }
+  ],
+  "complexity": {
+    "time": "O(n) - Single pass through array",
+    "space": "O(n) - Hash map stores at most n elements"
+  }
+}
+

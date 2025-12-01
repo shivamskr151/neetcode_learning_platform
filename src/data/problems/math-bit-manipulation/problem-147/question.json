@@ -1,0 +1,21 @@
+{
+  "id": 147,
+  "title": "Multiply Strings",
+  "difficulty": "Medium",
+  "pattern": "String Math",
+  "description": "Problem description for Multiply Strings. This is a placeholder - please update with the actual problem description from LeetCode.",
+  "patternExplanation": "Pattern explanation for String Math. This is a placeholder - please update with detailed pattern explanation.",
+  "patternExplanationHinglish": "Hinglish mein pattern explanation for String Math. Yeh ek placeholder hai - please update karein with detailed explanation.",
+  "examples": [
+    {
+      "input": {},
+      "output": null,
+      "explanation": "Example explanation placeholder. Please add actual examples.",
+      "explanationHinglish": "Example explanation ka placeholder. Please actual examples add karein."
+    }
+  ],
+  "complexity": {
+    "time": "O(n) - Placeholder complexity",
+    "space": "O(n) - Placeholder complexity"
+  }
+}

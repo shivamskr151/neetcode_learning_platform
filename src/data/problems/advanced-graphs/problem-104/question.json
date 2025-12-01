@@ -1,0 +1,21 @@
+{
+  "id": 104,
+  "title": "Bipartite Graph",
+  "difficulty": "Medium",
+  "pattern": "Graph Coloring",
+  "description": "Problem description for Bipartite Graph. This is a placeholder - please update with the actual problem description from LeetCode.",
+  "patternExplanation": "Pattern explanation for Graph Coloring. This is a placeholder - please update with detailed pattern explanation.",
+  "patternExplanationHinglish": "Hinglish mein pattern explanation for Graph Coloring. Yeh ek placeholder hai - please update karein with detailed explanation.",
+  "examples": [
+    {
+      "input": {},
+      "output": null,
+      "explanation": "Example explanation placeholder. Please add actual examples.",
+      "explanationHinglish": "Example explanation ka placeholder. Please actual examples add karein."
+    }
+  ],
+  "complexity": {
+    "time": "O(n) - Placeholder complexity",
+    "space": "O(n) - Placeholder complexity"
+  }
+}

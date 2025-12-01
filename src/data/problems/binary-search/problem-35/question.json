@@ -1,0 +1,21 @@
+{
+  "id": 35,
+  "title": "Search 2D Matrix",
+  "difficulty": "Medium",
+  "pattern": "Binary Search",
+  "description": "Problem description for Search 2D Matrix. This is a placeholder - please update with the actual problem description from LeetCode.",
+  "patternExplanation": "Pattern explanation for Binary Search. This is a placeholder - please update with detailed pattern explanation.",
+  "patternExplanationHinglish": "Hinglish mein pattern explanation for Binary Search. Yeh ek placeholder hai - please update karein with detailed explanation.",
+  "examples": [
+    {
+      "input": {},
+      "output": null,
+      "explanation": "Example explanation placeholder. Please add actual examples.",
+      "explanationHinglish": "Example explanation ka placeholder. Please actual examples add karein."
+    }
+  ],
+  "complexity": {
+    "time": "O(n) - Placeholder complexity",
+    "space": "O(n) - Placeholder complexity"
+  }
+}
