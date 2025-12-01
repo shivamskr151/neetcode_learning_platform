@@ -1,40 +1,74 @@
-// Utility functions for building test code wrappers
+// Utility functions for building test code wrappers and extracting function names
 
 /**
- * Build test code wrapper with test cases
- * @param {string} language - Programming language
- * @param {string} code - User's code
- * @param {string} funcName - Function name to call
- * @param {Array} testCases - Array of test cases
- * @returns {string} - Complete testable code
+ * Extract function name from code based on language
+ */
+export function extractFunctionName(language, code) {
+  switch (language) {
+    case 'java':
+      const javaMatch = code.match(/public\s+(?:static\s+)?\w+\s+(\w+)\s*\(/);
+      return javaMatch ? javaMatch[1] : 'solution';
+    
+    case 'cpp':
+      return extractCppFunctionName(code);
+    
+    case 'go':
+      const goMatch = code.match(/func\s+(\w+)\s*\(/);
+      return goMatch ? goMatch[1] : 'Solution';
+    
+    default:
+      return 'solution';
+  }
+}
+
+function extractCppFunctionName(code) {
+  const cleanCode = code.replace(/\/\/.*$/gm, '').trim();
+  const cppPatterns = [
+    /vector<\w+>\s+(\w+)\s*\(/,
+    /(?:^|\n)\s*(?:int|bool|string|double|float|char|void)\s+(\w+)\s*\(/,
+    /(?:^|\n)\s*[\w:<>]+\s+(\w+)\s*\(/,
+  ];
+  
+  for (const pattern of cppPatterns) {
+    const match = cleanCode.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  
+  // Try common function names
+  const commonNames = ['twoSum', 'containsDuplicate', 'isAnagram', 'groupAnagrams',
+    'topKFrequent', 'productExceptSelf', 'isValidSudoku', 'longestConsecutive', 'solution'];
+  
+  for (const name of commonNames) {
+    if (code.includes(`${name}(`)) return name;
+  }
+  
+  return 'solution';
+}
+
+/**
+ * Build test code wrapper with test cases for Judge0
  */
 export function buildTestCode(language, code, funcName, testCases) {
   switch (language) {
     case 'java':
       return buildJavaTestCode(code, funcName, testCases);
-    
     case 'cpp':
       return buildCppTestCode(code, funcName, testCases);
-    
     case 'go':
       return buildGoTestCode(code, funcName, testCases);
-    
     default:
       return code;
   }
 }
 
-/**
- * Build Java test code wrapper
- */
 function buildJavaTestCode(code, funcName, testCases) {
-  let javaCode = `import java.util.*;\nimport java.util.stream.Collectors;\n\npublic class Solution {\n`;
+  let javaCode = `import java.util.*;\n\npublic class Solution {\n`;
   
-  // Add the user's code (indented)
   const indentedCode = code.split('\n').map(line => '    ' + line).join('\n');
   javaCode += indentedCode;
   
-  // Add main method
   javaCode += '\n\n    public static void main(String[] args) {\n';
   javaCode += '        Solution solution = new Solution();\n';
   
@@ -56,120 +90,78 @@ function buildJavaTestCode(code, funcName, testCases) {
       args = JSON.stringify(input);
     }
     
-    javaCode += `        int[] result${idx} = solution.${funcName}(${args});\n`;
-    javaCode += `        System.out.println("RESULT_${idx}:" + Arrays.toString(result${idx}));\n`;
+    javaCode += `        Object result${idx} = solution.${funcName}(${args});\n`;
+    javaCode += `        System.out.println("RESULT_${idx}:" + java.util.Arrays.deepToString(new Object[]{result${idx}}));\n`;
   });
   
-  javaCode += '    }\n';
-  javaCode += '}\n';
-  
+  javaCode += '    }\n}\n';
   return javaCode;
 }
 
-/**
- * Build C++ test code wrapper
- */
 function buildCppTestCode(code, funcName, testCases) {
-  // Add includes and main function
   let cppCode = `#include <iostream>\n#include <vector>\n#include <unordered_map>\n#include <string>\n#include <algorithm>\nusing namespace std;\n\n`;
-  
-  // Add the user's code
   cppCode += code;
-  
-  // Add main function
   cppCode += '\n\nint main() {\n';
   
   testCases.forEach((testCase, idx) => {
     const input = testCase.input;
     let args = '';
-    let needsVar = false;
-    let varDecl = '';
-    
-    // Check if function signature has reference parameters
     const hasRefParam = code.includes('vector<int>&') || code.includes('vector<int> &');
     
     if (input.nums !== undefined && input.target !== undefined) {
       if (hasRefParam) {
-        varDecl = `    vector<int> nums${idx} = {${input.nums.join(',')}};\n`;
+        cppCode += `    vector<int> nums${idx} = {${input.nums.join(',')}};\n`;
         args = `nums${idx}, ${input.target}`;
-        needsVar = true;
       } else {
         args = `vector<int>{${input.nums.join(',')}}, ${input.target}`;
       }
     } else if (input.nums !== undefined && input.k !== undefined) {
       if (hasRefParam) {
-        varDecl = `    vector<int> nums${idx} = {${input.nums.join(',')}};\n`;
+        cppCode += `    vector<int> nums${idx} = {${input.nums.join(',')}};\n`;
         args = `nums${idx}, ${input.k}`;
-        needsVar = true;
       } else {
         args = `vector<int>{${input.nums.join(',')}}, ${input.k}`;
       }
     } else if (input.nums !== undefined) {
       if (hasRefParam) {
-        varDecl = `    vector<int> nums${idx} = {${input.nums.join(',')}};\n`;
+        cppCode += `    vector<int> nums${idx} = {${input.nums.join(',')}};\n`;
         args = `nums${idx}`;
-        needsVar = true;
       } else {
         args = `vector<int>{${input.nums.join(',')}}`;
       }
     } else if (input.s !== undefined && input.t !== undefined) {
       args = `"${input.s}", "${input.t}"`;
-    } else {
-      args = JSON.stringify(input);
     }
     
-    if (needsVar) {
-      cppCode += varDecl;
-    }
-    
-    // Determine return type (try to infer from function signature)
-    let returnType = 'auto';
-    if (code.match(/vector<\w+>\s+\w+\s*\(/)) {
-      returnType = 'vector<int>';
-    } else if (code.match(/int\s+\w+\s*\(/)) {
-      returnType = 'int';
-    } else if (code.match(/bool\s+\w+\s*\(/)) {
-      returnType = 'bool';
-    } else if (code.match(/string\s+\w+\s*\(/)) {
-      returnType = 'string';
-    }
+    const returnType = code.match(/vector<\w+>\s+\w+\s*\(/) ? 'vector<int>' :
+                      code.match(/int\s+\w+\s*\(/) ? 'int' :
+                      code.match(/bool\s+\w+\s*\(/) ? 'bool' :
+                      code.match(/string\s+\w+\s*\(/) ? 'string' : 'auto';
     
     cppCode += `    ${returnType} result${idx} = ${funcName}(${args});\n`;
     cppCode += `    cout << "RESULT_${idx}:";\n`;
-    cppCode += `    for (int i = 0; i < result${idx}.size(); i++) {\n`;
-    cppCode += `        cout << (i > 0 ? "," : "") << result${idx}[i];\n`;
-    cppCode += `    }\n`;
+    if (returnType.includes('vector')) {
+      cppCode += `    for (int i = 0; i < result${idx}.size(); i++) {\n`;
+      cppCode += `        cout << (i > 0 ? "," : "") << result${idx}[i];\n`;
+      cppCode += `    }\n`;
+    } else {
+      cppCode += `    cout << result${idx};\n`;
+    }
     cppCode += `    cout << endl;\n`;
   });
   
-  cppCode += '    return 0;\n';
-  cppCode += '}\n';
-  
+  cppCode += '    return 0;\n}\n';
   return cppCode;
 }
 
-/**
- * Build Go test code wrapper
- */
 function buildGoTestCode(code, funcName, testCases) {
-  // Extract just the function definitions, removing package and main if present
-  let goCode = code;
+  let goCode = code.replace(/^package\s+\w+\s*\n?/m, '')
+                   .replace(/^import\s*\([^)]*\)\s*\n?/m, '')
+                   .replace(/^import\s+"[^"]+"\s*\n?/gm, '')
+                   .replace(/func\s+main\s*\([^)]*\)\s*\{[\s\S]*?\n\}/, '')
+                   .replace(/^\/\/.*$/gm, '')
+                   .trim();
   
-  // Remove package declaration if present
-  goCode = goCode.replace(/^package\s+\w+\s*\n?/m, '');
-  
-  // Remove import blocks if present (we'll add our own)
-  goCode = goCode.replace(/^import\s*\([^)]*\)\s*\n?/m, '');
-  goCode = goCode.replace(/^import\s+"[^"]+"\s*\n?/gm, '');
-  
-  // Remove existing main function if present (we'll add our own)
-  goCode = goCode.replace(/func\s+main\s*\([^)]*\)\s*\{[\s\S]*?\n\}/, '');
-  
-  // Remove comments that might be at the start
-  goCode = goCode.replace(/^\/\/.*$/gm, '');
-  goCode = goCode.trim();
-  
-  // Now add our package, imports, and main
   goCode = `package main\n\nimport (\n    "fmt"\n)\n\n${goCode}\n\nfunc main() {\n`;
   
   testCases.forEach((testCase, idx) => {
@@ -184,8 +176,6 @@ function buildGoTestCode(code, funcName, testCases) {
       args = `[]int{${input.nums.join(',')}}`;
     } else if (input.s !== undefined && input.t !== undefined) {
       args = `"${input.s}", "${input.t}"`;
-    } else {
-      args = JSON.stringify(input);
     }
     
     goCode += `    result${idx} := ${funcName}(${args})\n`;
@@ -193,7 +183,6 @@ function buildGoTestCode(code, funcName, testCases) {
   });
   
   goCode += '}\n';
-  
   return goCode;
 }
 

@@ -1,4 +1,5 @@
 // Compiler service for executing code in different languages
+import { extractFunctionName, buildTestCode } from '../utils/codeBuilder.js';
 
 // Python execution using Pyodide (loaded from CDN)
 let pyodide = null;
@@ -196,113 +197,199 @@ async function executePython(code, testCases, debugMode = false) {
   }
 }
 
-// Check if backend server is available
-export async function checkBackendHealth() {
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Execute code via Judge0 API (for Java, C++, Go)
+async function executeViaJudge0(language, code, testCases, debugMode = false) {
+  const API_KEY = import.meta.env.VITE_JUDGE0_API_KEY;
+  const API_URL = import.meta.env.VITE_JUDGE0_API_URL || 'https://judge0-ce.p.rapidapi.com';
+  const API_HOST = import.meta.env.VITE_JUDGE0_API_HOST || 'judge0-ce.p.rapidapi.com';
   
-  try {
-    const response = await fetch(`${API_URL}/health`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(3000) // 3 second timeout
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      return { available: true, data };
-    }
-    return { available: false, error: `Server returned status ${response.status}` };
-  } catch (error) {
-    if (error.name === 'AbortError' || error.name === 'TypeError') {
-      return { 
-        available: false, 
-        error: 'Backend server is not reachable. Please start the server by running: cd server && npm start' 
-      };
-    }
-    return { available: false, error: error.message };
+  if (!API_KEY) {
+    return {
+      success: false,
+      error: 'Judge0 API key not configured. Please add VITE_JUDGE0_API_KEY to your .env file.\n\n' +
+        'Get your free API key from: https://rapidapi.com/judge0-official/api/judge0-ce'
+    };
   }
-}
 
-// Check compiler availability
-export async function checkCompilers() {
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-  
-  try {
-    const response = await fetch(`${API_URL}/api/check-compilers`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(5000)
-    });
-    
-    if (response.ok) {
-      return await response.json();
-    }
-    return null;
-  } catch (error) {
-    return null;
-  }
-}
+  // Language ID mapping for Judge0
+  const languageIds = {
+    'java': 62,      // Java (OpenJDK 13.0.1)
+    'cpp': 54,       // C++ (GCC 9.2.0)
+    'go': 60,        // Go (1.13.5)
+  };
 
-// Execute code via backend API (for Java, C++, Go)
-async function executeBackendCode(language, code, testCases, debugMode = false) {
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-  
-  // Validate code matches expected language
-  if (language === 'cpp') {
-    // Check for JavaScript patterns that shouldn't be in C++
-    if (code.includes('function ') && !code.includes('std::function')) {
-      return {
-        success: false,
-        error: 'The code appears to be JavaScript, not C++. Please make sure you have selected the C++ language tab and the correct code is loaded.'
-      };
-    }
-    // Check for C++ patterns
-    if (!code.includes('vector') && !code.includes('#include') && !code.includes('int ') && !code.includes('void ')) {
-      return {
-        success: false,
-        error: 'The code does not appear to be valid C++ code. Please check that you have selected C++ and the correct solution is loaded.'
-      };
-    }
+  const languageId = languageIds[language];
+  if (!languageId) {
+    return {
+      success: false,
+      error: `Unsupported language for Judge0: ${language}`
+    };
   }
-  
-  if (debugMode) {
-    console.log(`Sending ${language} code to backend (first 200 chars):`, code.substring(0, 200));
-  }
-  
+
   try {
-    const response = await fetch(`${API_URL}/api/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        language,
-        code,
-        testCases
-      }),
-      signal: AbortSignal.timeout(30000) // 30 second timeout for execution
-    });
+    // Extract function name and build test code
+    const funcName = extractFunctionName(language, code);
+    const testCode = buildTestCode(language, code, funcName, testCases);
+
+    const results = [];
     
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    // Execute each test case
+    for (let i = 0; i < testCases.length; i++) {
+      const testCase = testCases[i];
+      
+      // Build input string
+      const inputStr = JSON.stringify(testCase.input);
+      
+      // Submit code for execution (wait=true means synchronous execution)
+      const submitResponse = await fetch(
+        `${API_URL}/submissions?base64_encoded=false&wait=true&fields=stdout,stderr,compile_output,status_id,time,memory`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RapidAPI-Key': API_KEY,
+            'X-RapidAPI-Host': API_HOST
+          },
+          body: JSON.stringify({
+            source_code: testCode,
+            language_id: languageId,
+            stdin: inputStr,
+            cpu_time_limit: 5,
+            memory_limit: 128000
+          }),
+          signal: AbortSignal.timeout(30000) // 30 second timeout
+        }
+      );
+
+      if (!submitResponse.ok) {
+        const errorText = await submitResponse.text();
+        throw new Error(`Judge0 API error (${submitResponse.status}): ${errorText}`);
+      }
+
+      const result = await submitResponse.json();
+      
+      // Check for compilation or runtime errors
+      if (result.compile_output) {
+        results.push({
+          example: i + 1,
+          input: testCase.input,
+          expected: testCase.output,
+          actual: null,
+          passed: false,
+          error: result.compile_output
+        });
+        continue;
+      }
+
+      if (result.stderr) {
+        results.push({
+          example: i + 1,
+          input: testCase.input,
+          expected: testCase.output,
+          actual: null,
+          passed: false,
+          error: result.stderr
+        });
+        continue;
+      }
+
+      // Status 3 = Accepted, others indicate errors
+      if (result.status_id && result.status_id !== 3) {
+        const statusMessages = {
+          1: 'In Queue',
+          2: 'Processing',
+          4: 'Wrong Answer',
+          5: 'Time Limit Exceeded',
+          6: 'Compilation Error',
+          7: 'Runtime Error',
+          8: 'Runtime Error',
+          9: 'Runtime Error',
+          10: 'Runtime Error',
+          11: 'Runtime Error',
+          12: 'Runtime Error',
+          13: 'Internal Error'
+        };
+        results.push({
+          example: i + 1,
+          input: testCase.input,
+          expected: testCase.output,
+          actual: null,
+          passed: false,
+          error: statusMessages[result.status_id] || `Status: ${result.status_id}`
+        });
+        continue;
+      }
+      
+      // Parse output
+      let actual = null;
+      if (result.stdout) {
+        // Try to parse RESULT_X: format
+        const resultPattern = new RegExp(`RESULT_${i}:(.+)`, 'm');
+        const match = result.stdout.match(resultPattern);
+        
+        if (match) {
+          const resultStr = match[1].trim();
+          try {
+            // Try to parse as JSON array
+            if (resultStr.startsWith('[') || resultStr.includes(',')) {
+              const cleaned = resultStr.replace(/[\[\]]/g, '');
+              if (cleaned) {
+                actual = cleaned.split(',').map(s => {
+                  const trimmed = s.trim();
+                  const num = parseInt(trimmed, 10);
+                  return isNaN(num) ? trimmed : num;
+                });
+              } else {
+                actual = [];
+              }
+            } else {
+              // Try to parse as number
+              const num = parseInt(resultStr, 10);
+              actual = isNaN(num) ? resultStr : num;
+            }
+          } catch (e) {
+            actual = resultStr;
+          }
+        } else {
+          // Fallback: try to parse entire stdout as JSON
+          try {
+            actual = JSON.parse(result.stdout.trim());
+          } catch (e) {
+            actual = result.stdout.trim();
+          }
+        }
+      }
+      
+      // Compare results
+      const passed = JSON.stringify(actual) === JSON.stringify(testCase.output);
+      
+      results.push({
+        example: i + 1,
+        input: testCase.input,
+        expected: testCase.output,
+        actual: actual,
+        passed: passed,
+        error: null
+      });
     }
     
-    const result = await response.json();
-    return result;
+    return {
+      success: true,
+      results: results
+    };
+    
   } catch (error) {
-    // Provide helpful error messages
     let errorMessage = error.message;
     
     if (error.name === 'AbortError') {
-      errorMessage = `Execution timed out. The code may be taking too long to run.`;
-    } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      errorMessage = `Cannot connect to backend server at ${API_URL}.\n\n` +
-        `Please make sure the backend server is running:\n` +
-        `1. Open a terminal and run: cd server && npm start\n` +
-        `2. The server should start on http://localhost:3001\n` +
-        `3. Then try running your code again.`;
-    } else if (!errorMessage.includes('backend') && !errorMessage.includes('server')) {
-      errorMessage = `Failed to execute ${language} code: ${errorMessage}\n\n` +
-        `Make sure the backend server is running on ${API_URL}`;
+      errorMessage = 'Execution timed out. The code may be taking too long to run.';
+    } else if (error.message.includes('API key')) {
+      errorMessage = error.message;
+    } else {
+      errorMessage = `Judge0 API error: ${errorMessage}\n\n` +
+        'Make sure you have:\n' +
+        '1. Added VITE_JUDGE0_API_KEY to your .env file\n' +
+        '2. Signed up at https://rapidapi.com/judge0-official/api/judge0-ce';
     }
     
     return {
@@ -325,7 +412,7 @@ export async function executeCode(language, code, testCases, debugMode = false) 
     case 'java':
     case 'cpp':
     case 'go':
-      return await executeBackendCode(language, code, testCases, debugMode);
+      return await executeViaJudge0(language, code, testCases, debugMode);
     
     default:
       return {

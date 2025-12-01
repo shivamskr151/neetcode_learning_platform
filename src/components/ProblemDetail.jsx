@@ -4,7 +4,7 @@ import { getProblemById } from '../data/problems';
 import CodeEditor from './CodeEditor';
 import ExecutionResults from './ExecutionResults';
 import DebugConsole from './DebugConsole';
-import { executeCode, canExecuteLanguage, checkBackendHealth, checkCompilers } from '../services/compilerService';
+import { executeCode, canExecuteLanguage } from '../services/compilerService';
 
 function ProblemDetail() {
   const { id } = useParams();
@@ -15,8 +15,7 @@ function ProblemDetail() {
   const [useHinglish, setUseHinglish] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [debugLogs, setDebugLogs] = useState([]);
-  const [backendStatus, setBackendStatus] = useState(null); // null = checking, true = available, false = unavailable
-  const [compilerStatus, setCompilerStatus] = useState(null);
+  const [judge0Status, setJudge0Status] = useState(null); // null = not checked, true = configured, false = not configured
 
   if (!problem) {
     return (
@@ -41,7 +40,6 @@ function ProblemDetail() {
     if (problem && problem.solution) {
       const newCode = problem.solution[selectedLanguage] || '';
       if (newCode !== code) {
-        console.log(`Updating code for language: ${selectedLanguage}, code length: ${newCode.length}`);
         setCode(newCode);
       }
       setExecutionResult(null);
@@ -60,27 +58,14 @@ function ProblemDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problem?.id]); // Only check when problem ID changes
 
-  // Check backend health and compiler status for languages that need it
+  // Check Judge0 API key configuration
   useEffect(() => {
-    const needsBackend = ['java', 'cpp', 'go'].includes(selectedLanguage);
-    if (needsBackend) {
-      setBackendStatus(null); // Checking
-      setCompilerStatus(null);
-      
-      checkBackendHealth().then(({ available }) => {
-        setBackendStatus(available);
-        if (available) {
-          // Check compiler availability
-          checkCompilers().then(compilers => {
-            setCompilerStatus(compilers);
-          });
-        }
-      }).catch(() => {
-        setBackendStatus(false);
-      });
+    const needsJudge0 = ['java', 'cpp', 'go'].includes(selectedLanguage);
+    if (needsJudge0) {
+      const apiKey = import.meta.env.VITE_JUDGE0_API_KEY;
+      setJudge0Status(!!apiKey);
     } else {
-      setBackendStatus(null); // Not needed
-      setCompilerStatus(null);
+      setJudge0Status(null);
     }
   }, [selectedLanguage]);
 
@@ -89,7 +74,6 @@ function ProblemDetail() {
     const newCode = problem.solution[lang] || '';
     setCode(newCode);
     setExecutionResult(null);
-    console.log(`Language changed to ${lang}, code length: ${newCode.length}`);
   };
 
   const handleCodeChange = (newCode) => {
@@ -234,13 +218,6 @@ function ProblemDetail() {
           
           if (!func || typeof func !== 'function') {
             throw new Error('Could not find a function in your code. Please make sure you define a function like:\nfunction myFunction(...) { ... }\nor\nconst myFunction = (...) => { ... }');
-          }
-          
-          if (debugMode) {
-            logs.push({
-              type: 'success',
-              message: `Successfully extracted function: ${func.name || 'anonymous'}`
-            });
           }
           
           if (debugMode) {
@@ -628,77 +605,31 @@ function ProblemDetail() {
               <span className="text-blue-400 text-xl">ℹ️</span>
               <div className="text-blue-200 text-sm flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <strong>Backend Status:</strong>
-                  {backendStatus === null && (
-                    <span className="text-yellow-400">🔄 Checking...</span>
+                  <strong>Judge0 API Status:</strong>
+                  {judge0Status === true && (
+                    <span className="text-green-400">✅ Configured</span>
                   )}
-                  {backendStatus === true && (
-                    <span className="text-green-400">✅ Connected</span>
-                  )}
-                  {backendStatus === false && (
-                    <span className="text-red-400">❌ Not Available</span>
+                  {judge0Status === false && (
+                    <span className="text-red-400">❌ Not Configured</span>
                   )}
                 </div>
                 <div>
-                  <strong>Note:</strong> {selectedLanguage === 'go' ? 'Go' : selectedLanguage === 'java' ? 'Java' : 'C++'} code is executed via backend API.
+                  <strong>Note:</strong> {selectedLanguage === 'go' ? 'Go' : selectedLanguage === 'java' ? 'Java' : 'C++'} code is executed via Judge0 API (no backend needed).
                 </div>
-                {backendStatus === false && (
+                {judge0Status === false && (
                   <div className="mt-2 p-2 bg-red-900/30 border border-red-700 rounded text-red-200">
-                    <strong>Backend server is not running.</strong>
-                    <div className="mt-1 text-xs">
-                      To start the server:
-                      <ol className="list-decimal list-inside mt-1 ml-2 space-y-1">
-                        <li>Open a terminal</li>
-                        <li>Run: <code className="bg-gray-800 px-1 py-0.5 rounded">cd server && npm start</code></li>
-                        <li>Wait for: <code className="bg-gray-800 px-1 py-0.5 rounded">Server running on http://localhost:3001</code></li>
-                        <li>Refresh this page</li>
-                      </ol>
+                    <strong>Judge0 API key not configured.</strong>
+                    <div className="mt-1 text-xs space-y-1">
+                      <div>1. Get your free API key from: <a href="https://rapidapi.com/judge0-official/api/judge0-ce" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">RapidAPI Judge0</a></div>
+                      <div>2. Create a <code className="bg-gray-800 px-1 py-0.5 rounded">.env</code> file in the project root</div>
+                      <div>3. Add: <code className="bg-gray-800 px-1 py-0.5 rounded">VITE_JUDGE0_API_KEY=your_api_key_here</code></div>
+                      <div>4. Restart your development server</div>
                     </div>
                   </div>
                 )}
-                {backendStatus === true && compilerStatus && (
-                  <div className="mt-2 space-y-1">
-                    <div className="text-xs font-semibold">Compiler Status:</div>
-                    {selectedLanguage === 'java' && (
-                      <div className={`text-xs ${compilerStatus.java?.installed ? 'text-green-300' : 'text-red-300'}`}>
-                        Java: {compilerStatus.java?.installed ? '✅ Installed' : '❌ Not Found'}
-                        {!compilerStatus.java?.installed && compilerStatus.java?.error && (
-                          <div className="mt-1 p-2 bg-red-900/30 border border-red-700 rounded text-xs">
-                            <div className="font-semibold mb-1">Install Java:</div>
-                            <div className="space-y-1">
-                              <div>1. Install Homebrew: <code className="bg-gray-800 px-1 py-0.5 rounded">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</code></div>
-                              <div>2. Install OpenJDK: <code className="bg-gray-800 px-1 py-0.5 rounded">brew install openjdk</code></div>
-                              <div>3. Set JAVA_HOME: <code className="bg-gray-800 px-1 py-0.5 rounded">export JAVA_HOME=$(/usr/libexec/java_home)</code></div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {selectedLanguage === 'cpp' && (
-                      <div className={`text-xs ${compilerStatus.cpp?.installed ? 'text-green-300' : 'text-red-300'}`}>
-                        C++: {compilerStatus.cpp?.installed ? '✅ Installed' : '❌ Not Found'}
-                        {!compilerStatus.cpp?.installed && (
-                          <div className="mt-1 p-2 bg-red-900/30 border border-red-700 rounded text-xs">
-                            Install: <code className="bg-gray-800 px-1 py-0.5 rounded">brew install gcc</code> or <code className="bg-gray-800 px-1 py-0.5 rounded">xcode-select --install</code>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {selectedLanguage === 'go' && (
-                      <div className={`text-xs ${compilerStatus.go?.installed ? 'text-green-300' : 'text-red-300'}`}>
-                        Go: {compilerStatus.go?.installed ? '✅ Installed' : '❌ Not Found'}
-                        {!compilerStatus.go?.installed && (
-                          <div className="mt-1 p-2 bg-red-900/30 border border-red-700 rounded text-xs">
-                            Install: <code className="bg-gray-800 px-1 py-0.5 rounded">brew install go</code>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {backendStatus === true && !compilerStatus && (
+                {judge0Status === true && (
                   <div className="mt-2 text-xs text-green-300">
-                    Backend server is running and ready to execute code.
+                    ✅ Judge0 API is configured. Code execution is ready!
                   </div>
                 )}
               </div>

@@ -1,6 +1,8 @@
-# 🚀 NeetCode 150 - Interactive Learning Platform
+# 🚀 NeetCode 150 - Revision Playground
 
 An interactive learning platform for mastering all 150 NeetCode problems with pattern-based explanations, examples, and a live code playground.
+
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/shivamskr151/neetcode_learning_platform)
 
 ## ✨ Features
 
@@ -10,6 +12,7 @@ An interactive learning platform for mastering all 150 NeetCode problems with pa
 - **💻 Code Playground**: Write and test solutions in multiple languages (JavaScript, Python, Java, C++, Go)
 - **✅ Test Execution**: Run your code against test cases and see results instantly
 - **🔧 Multi-Language Compilers**: Full support for executing code in all supported languages
+- **🐛 Debug Mode**: Enable debug console to see detailed execution logs and error messages
 - **⏱️ Complexity Analysis**: Time and space complexity for each solution
 - **🌐 Hinglish Support**: Toggle between English and Hinglish explanations
 
@@ -22,25 +25,22 @@ An interactive learning platform for mastering all 150 NeetCode problems with pa
 
 ### Installation
 
-1. **Clone the repository** (if applicable) or navigate to the project directory
-
-2. **Install frontend dependencies:**
+1. **Clone the repository:**
    ```bash
-   npm install
+   git clone https://github.com/shivamskr151/neetcode_learning_platform.git
+   cd neetcode_learning_platform
    ```
 
-3. **Install backend dependencies** (required for Java, C++, Go):
+2. **Install dependencies:**
    ```bash
-   cd server
    npm install
-   cd ..
    ```
 
 ### Running the Application
 
-#### Frontend Only (JavaScript and Python)
+#### Basic Setup (JavaScript and Python)
 
-For basic usage with JavaScript and Python support only:
+JavaScript and Python work immediately - no additional setup needed:
 
 ```bash
 npm run dev
@@ -48,68 +48,29 @@ npm run dev
 
 The app will be available at `http://localhost:5173`
 
-> **Note**: JavaScript and Python work without the backend. Java, C++, and Go require the backend server to be running.
+#### Full Setup (All Languages - Java, C++, Go)
 
-#### Full Setup (All Languages)
+To enable support for Java, C++, and Go, you need to configure Judge0 API:
 
-To enable support for Java, C++, and Go:
+1. **Get Judge0 API Key:**
+   - Visit https://rapidapi.com/judge0-official/api/judge0-ce
+   - Sign up for a free account
+   - Subscribe to the free tier (100 requests/day)
+   - Copy your API key from the dashboard
 
-1. **Install system dependencies:**
-
-   - **Java**: Install JDK
-     ```bash
-     # macOS
-     brew install openjdk
-     
-     # Ubuntu/Debian
-     sudo apt-get install default-jdk
-     
-     # Verify
-     javac -version
-     java -version
-     ```
-     
-     > **macOS Java Setup**: If you encounter "Unable to locate a Java Runtime", see [Java Installation Troubleshooting](#java-installation-troubleshooting) below.
-
-   - **C++**: Install GCC/G++
-     ```bash
-     # macOS
-     brew install gcc
-     
-     # Ubuntu/Debian
-     sudo apt-get install build-essential
-     
-     # Verify
-     g++ --version
-     ```
-
-   - **Go**: Install Go
-     ```bash
-     # macOS
-     brew install go
-     
-     # Ubuntu/Debian
-     sudo apt-get install golang-go
-     
-     # Verify
-     go version
-     ```
-
-2. **Start the backend server** (in one terminal):
-   ```bash
-   npm run server
-   # or
-   cd server && npm start
+2. **Configure Environment Variables:**
+   
+   Create a `.env` file in the project root:
+   ```env
+   VITE_JUDGE0_API_KEY=your_api_key_here
    ```
-   
-   The server will run on `http://localhost:3001` by default.
-   
-   > **Backend Structure**: The backend is organized in a modular structure with separate folders for controllers, services, routes, middlewares, and utilities. See the [Backend Architecture](#backend-architecture) section for details.
 
-3. **Start the frontend** (in another terminal):
+3. **Start the application:**
    ```bash
    npm run dev
    ```
+   
+   > **Note**: No backend server needed! All code execution is handled via Judge0 API in the browser.
 
 ### Build for Production
 
@@ -129,8 +90,9 @@ npm run preview
 3. **Learn the Pattern**: Read the pattern explanation to understand the core approach
 4. **Study Examples**: Review the examples to see how the solution works
 5. **Write Code**: Use the code editor to write your solution in your preferred language
-6. **Test Your Solution**: Click "Run Code" to execute against test cases
-7. **Review Results**: See which test cases passed or failed
+6. **Enable Debug Mode** (optional): Toggle the debug button to see detailed execution logs
+7. **Test Your Solution**: Click "Run Code" to execute against test cases
+8. **Review Results**: See which test cases passed or failed, with detailed error messages if any
 
 ## 🎓 Learning Approach
 
@@ -147,7 +109,19 @@ Each problem includes:
 ```
 algo/
 ├── src/
+│   ├── components/            # React components
+│   │   ├── CategoryList.jsx   # Category and problem listing
+│   │   ├── ProblemDetail.jsx  # Problem detail view with code editor
+│   │   ├── CodeEditor.jsx     # Monaco editor wrapper
+│   │   ├── ExecutionResults.jsx # Test results display
+│   │   └── DebugConsole.jsx  # Debug output console
+│   ├── services/
+│   │   └── compilerService.js # Code execution service (Python, Java, C++, Go)
+│   ├── utils/
+│   │   └── codeBuilder.js     # Code wrapper utilities for Judge0
 │   ├── data/
+│   │   ├── problems.js        # Problem data loader
+│   │   ├── loadProblems.js    # Problem loading utilities
 │   │   └── problems/          # All problem definitions
 │   │       ├── arrays-hashing/
 │   │       │   ├── problem-1/
@@ -163,33 +137,10 @@ algo/
 │   │       ├── two-pointers/
 │   │       ├── sliding-window/
 │   │       └── ... (17 categories total)
-│   └── ...
-├── server/                     # Backend API for compiled languages
-│   ├── src/
-│   │   ├── config/            # Configuration files
-│   │   │   ├── environment.js # Environment setup (Java home, temp dir, port)
-│   │   │   └── constants.js   # Application constants
-│   │   ├── controllers/       # Request handlers
-│   │   │   ├── healthController.js
-│   │   │   ├── compilerController.js
-│   │   │   └── executeController.js
-│   │   ├── services/          # Business logic
-│   │   │   ├── codeExecutionService.js
-│   │   │   └── compilerCheckService.js
-│   │   ├── routes/            # Route definitions
-│   │   │   └── index.js
-│   │   ├── middlewares/       # Express middlewares
-│   │   │   └── errorHandler.js
-│   │   ├── utils/             # Utility functions
-│   │   │   ├── functionExtractor.js
-│   │   │   ├── testCodeBuilder.js
-│   │   │   ├── fileManager.js
-│   │   │   └── outputParser.js
-│   │   ├── app.js             # Express app setup
-│   │   └── server.js          # Server entry point
-│   ├── index.js               # Legacy file (can be removed)
-│   └── package.json
-├── scripts/                    # Utility scripts
+│   ├── App.jsx                # Main app component with routing
+│   └── main.jsx               # App entry point
+├── scripts/
+│   └── generateProblems.js    # Script to generate problem structure
 └── package.json
 ```
 
@@ -273,88 +224,48 @@ To add a new problem:
 ## 🔧 How Code Execution Works
 
 ### JavaScript
-- Executed directly in the browser using `eval()` and `Function()` constructor
-- No backend required
+- Executed directly in the browser using `Function()` constructor
+- Function is automatically extracted from code (supports function declarations, arrow functions, etc.)
+- Test cases are executed against the extracted function
+- No backend or API required
 
 ### Python
-- Executed using Pyodide (Python in the browser via WebAssembly)
-- No backend required
+- Executed using **Pyodide** (Python in the browser via WebAssembly)
+- Function is automatically detected and test cases are executed
+- No backend or API required
+- Loaded from CDN on first use
 
 ### Java, C++, Go
-- Code is sent to the backend API (`http://localhost:3001`)
-- Backend process:
-  1. Wraps the code in a complete program (adds main function, imports, etc.)
-  2. Compiles the code (for Java and C++)
-  3. Executes the program
-  4. Captures and parses the output
-  5. Returns results in a standardized format
+- Code is executed via **Judge0 API** (cloud-based code execution service)
+- Process:
+  1. Function name is extracted from code
+  2. Code is wrapped in a complete program (adds main function, imports, etc.) using `codeBuilder.js`
+  3. Each test case is sent to Judge0 API for compilation and execution
+  4. Results are parsed and compared with expected outputs
+  5. No backend server needed - runs entirely in the browser!
+
+### Debug Mode
+- When enabled, captures all `console.log()` and `console.error()` output
+- Shows detailed execution flow, function extraction, and test case results
+- Helps identify issues in code logic and execution
 
 ## 🛠️ Tech Stack
 
 - **Frontend:**
   - React 19 - UI framework
-  - Vite - Build tool
-  - Tailwind CSS - Styling
-  - Monaco Editor - Code editor
-  - React Router - Navigation
-  - Pyodide - Python execution in browser
+  - Vite 7 - Build tool and dev server
+  - Tailwind CSS 4 - Styling
+  - Monaco Editor - Code editor with syntax highlighting
+  - React Router 7 - Navigation and routing
 
-- **Backend:**
-  - Express - API server
-  - Node.js - Runtime
-  - Modular architecture with separation of concerns
-
-## 🏗️ Backend Architecture
-
-The backend follows a clean, modular architecture for better maintainability and scalability:
-
-### Folder Structure
-
-```
-server/src/
-├── config/              # Configuration files
-│   ├── environment.js  # Environment setup (Java home detection, temp dir, port)
-│   └── constants.js    # Application constants (supported languages, timeouts)
-│
-├── controllers/         # Request handlers (HTTP layer)
-│   ├── healthController.js      # Health check endpoint
-│   ├── compilerController.js    # Compiler availability check
-│   └── executeController.js     # Code execution endpoint
-│
-├── services/            # Business logic layer
-│   ├── codeExecutionService.js  # Orchestrates code execution (compile, run, parse)
-│   └── compilerCheckService.js  # Checks compiler availability on system
-│
-├── routes/              # Route definitions
-│   └── index.js        # All API endpoints mapped to controllers
-│
-├── middlewares/         # Express middlewares
-│   └── errorHandler.js # Global error handling and 404 handler
-│
-├── utils/               # Reusable utility functions
-│   ├── functionExtractor.js  # Extract function names from code by language
-│   ├── testCodeBuilder.js    # Build test code wrappers for different languages
-│   ├── fileManager.js        # Manage temporary files
-│   └── outputParser.js       # Parse and format execution output
-│
-├── app.js               # Express app configuration
-└── server.js            # Server entry point
-```
-
-### API Endpoints
-
-- `GET /health` - Health check endpoint
-- `GET /api/check-compilers` - Check availability of Java, C++, and Go compilers
-- `POST /api/execute` - Execute code in Java, C++, or Go
-
-### Module Responsibilities
-
-- **Config**: Environment variables, constants, and configuration management
-- **Controllers**: Handle HTTP requests, validate input, call services, return responses
-- **Services**: Contain business logic for code execution and compiler checking
-- **Routes**: Define API endpoints and map them to controllers
-- **Middlewares**: Global error handling and request processing
-- **Utils**: Reusable functions for code parsing, test building, and output formatting
+- **Code Execution:**
+  - **JavaScript**: Direct browser execution using `Function()` constructor
+  - **Python**: Pyodide (Python in the browser via WebAssembly)
+  - **Java, C++, Go**: Judge0 API (cloud-based code execution service)
+  
+- **Development:**
+  - ESLint - Code linting
+  - PostCSS - CSS processing
 
 ## 🔍 Troubleshooting
 
@@ -363,79 +274,37 @@ server/src/
 - Some Python features may not be available in Pyodide
 
 ### Java/C++/Go execution fails
-- Verify the backend server is running: `curl http://localhost:3001/health`
-- Check that compilers are installed: `javac -version`, `g++ --version`, `go version`
-- Check backend server logs for errors
+- Verify Judge0 API key is configured in `.env` file
+- Check browser console for API errors
+- Ensure you've subscribed to Judge0 API on RapidAPI
+- Free tier allows 100 requests/day - check your usage limits
+- Verify your API key is correct and active
 
-### Backend connection errors
-- Ensure the backend is running on the correct port (default: 3001)
-- Set `VITE_API_URL` environment variable if using a different URL
-- Check CORS settings if accessing from a different origin
-
-### Java Installation Troubleshooting
-
-#### macOS: "Unable to locate a Java Runtime"
-
-If `javac` works but `java` doesn't:
-
-1. **Find Java installation:**
-   ```bash
-   /usr/libexec/java_home -V
-   ```
-
-2. **Set JAVA_HOME** (add to your `~/.zshrc` or `~/.bash_profile`):
-   ```bash
-   echo 'export JAVA_HOME=$(/usr/libexec/java_home)' >> ~/.zshrc
-   echo 'export PATH="$JAVA_HOME/bin:$PATH"' >> ~/.zshrc
-   source ~/.zshrc
-   ```
-
-3. **Verify installation:**
-   ```bash
-   java -version
-   javac -version
-   ```
-
-Both commands should show version information without errors.
-
-#### Alternative Java Installation Methods
-
-**Using SDKMAN:**
-```bash
-# Install SDKMAN
-curl -s "https://get.sdkman.io" | bash
-source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-# Install Java
-sdk install java
-```
-
-**Using Oracle JDK:**
-1. Download from: https://www.oracle.com/java/technologies/downloads/
-2. Install the `.dmg` file
-3. Set JAVA_HOME:
-   ```bash
-   export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-XX.jdk/Contents/Home
-   export PATH="$JAVA_HOME/bin:$PATH"
-   ```
+### Judge0 API errors
+- **"API key not configured"**: Add `VITE_JUDGE0_API_KEY` to your `.env` file
+- **"Execution timed out"**: Code may be taking too long (5 second limit on free tier)
+- **"API rate limit exceeded"**: Free tier allows 100 requests/day, wait or upgrade
+- **"Invalid API key"**: Verify your API key at RapidAPI dashboard
 
 ## 🌐 Environment Variables
 
-- `VITE_API_URL`: Backend API URL (default: `http://localhost:3001`)
+- `VITE_JUDGE0_API_KEY`: Judge0 API key (required for Java, C++, Go)
+- `VITE_JUDGE0_API_URL`: Judge0 API URL (optional, default: `https://judge0-ce.p.rapidapi.com`)
+- `VITE_JUDGE0_API_HOST`: Judge0 API host (optional, default: `judge0-ce.p.rapidapi.com`)
 
 Create a `.env` file in the root directory:
+```env
+VITE_JUDGE0_API_KEY=your_api_key_here
 ```
-VITE_API_URL=http://localhost:3001
-```
+
+The `.env` file is automatically ignored by git (see `.gitignore`), so your API key won't be committed to version control.
 
 ## 📜 Available Scripts
 
-- `npm run dev` - Start development server (frontend)
+- `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
-- `npm run server` - Start backend server
-- `npm run server:dev` - Start backend server in development mode
 
 ## 🤝 Contributing
 
